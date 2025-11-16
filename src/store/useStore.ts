@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { getData, postData } from '../lib/http'
 
 interface Club {
   id: string
@@ -170,9 +171,7 @@ export const useStore = create<AppState>((set, get) => ({
   fetchPlayers: async () => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch('/api/players')
-      if (!response.ok) throw new Error('Failed to fetch players')
-      const data = await response.json()
+      const data = await getData<Player[]>('/players')
       set({ players: data, loading: false })
     } catch (error) {
       set({ error: 'Failed to fetch players', loading: false })
@@ -182,9 +181,7 @@ export const useStore = create<AppState>((set, get) => ({
   fetchMatches: async () => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch('/api/matches')
-      if (!response.ok) throw new Error('Failed to fetch matches')
-      const data = await response.json()
+      const data = await getData<Match[]>('/matches')
       set({ matches: data, loading: false })
     } catch (error) {
       set({ error: 'Failed to fetch matches', loading: false })
@@ -194,9 +191,7 @@ export const useStore = create<AppState>((set, get) => ({
   fetchClubs: async () => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch('/api/clubs')
-      if (!response.ok) throw new Error('Failed to fetch clubs')
-      const data = await response.json()
+      const data = await getData<Club[]>('/clubs')
       set({ clubs: data, loading: false })
     } catch (error) {
       set({ error: 'Failed to fetch clubs', loading: false })
@@ -206,9 +201,7 @@ export const useStore = create<AppState>((set, get) => ({
   fetchMyClubs: async () => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch('/api/clubs/my')
-      if (!response.ok) throw new Error('Failed to fetch my clubs')
-      const data = await response.json()
+      const data = await getData<ClubPlayer[]>('/clubs/my')
       set({ myClubs: data, loading: false })
     } catch (error) {
       set({ error: 'Failed to fetch my clubs', loading: false })
@@ -218,12 +211,7 @@ export const useStore = create<AppState>((set, get) => ({
   joinMatch: async (matchId: string, playerId: string) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch(`/api/matches/${matchId}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ player_id: playerId })
-      })
-      if (!response.ok) throw new Error('Failed to join match')
+      await postData<void>(`/matches/${matchId}/join`, { player_id: playerId })
       await get().fetchMatches()
       set({ loading: false })
     } catch (error) {
@@ -234,12 +222,7 @@ export const useStore = create<AppState>((set, get) => ({
   createMatch: async (matchData: Partial<Match>) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch('/api/matches', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(matchData)
-      })
-      if (!response.ok) throw new Error('Failed to create match')
+      await postData<void>('/matches', matchData)
       await get().fetchMatches()
       set({ loading: false })
     } catch (error) {
@@ -250,12 +233,7 @@ export const useStore = create<AppState>((set, get) => ({
   submitRating: async (ratingData: Partial<PlayerRating>) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch('/api/ratings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ratingData)
-      })
-      if (!response.ok) throw new Error('Failed to submit rating')
+      await postData<void>('/ratings', ratingData)
       set({ loading: false })
     } catch (error) {
       set({ error: 'Failed to submit rating', loading: false })
@@ -265,11 +243,7 @@ export const useStore = create<AppState>((set, get) => ({
   balanceTeams: async (matchId: string) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch(`/api/matches/${matchId}/balance-teams`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      if (!response.ok) throw new Error('Failed to balance teams')
+      await postData<void>(`/matches/${matchId}/balance-teams`)
       await get().fetchMatches()
       set({ loading: false })
     } catch (error) {
@@ -281,18 +255,10 @@ export const useStore = create<AppState>((set, get) => ({
   login: async (email: string, password: string) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Login failed')
-      }
-      
-      const data = await response.json()
+      const data = await postData<{ token: string; user: User }>(
+        '/auth/login',
+        { email, password }
+      )
       get().setToken(data.token)
       get().setCurrentUser(data.user)
       if (data.user.player) {
@@ -308,18 +274,10 @@ export const useStore = create<AppState>((set, get) => ({
   register: async (userData: any) => {
     set({ loading: true, error: null })
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      })
-      
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Registration failed')
-      }
-      
-      const data = await response.json()
+      const data = await postData<{ token: string; user: User }>(
+        '/auth/register',
+        userData
+      )
       get().setToken(data.token)
       get().setCurrentUser(data.user)
       if (data.user.player) {
@@ -344,19 +302,7 @@ export const useStore = create<AppState>((set, get) => ({
 
     set({ loading: true, error: null })
     try {
-      const response = await fetch('/api/auth/me', {
-        headers: { 
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      
-      if (!response.ok) {
-        // Token is invalid, clear it
-        get().logout()
-        return
-      }
-      
-      const data = await response.json()
+      const data = await getData<{ user: User }>('/auth/me')
       get().setCurrentUser(data.user)
       if (data.user.player) {
         get().setCurrentPlayer(data.user.player)
@@ -372,17 +318,7 @@ export const useStore = create<AppState>((set, get) => ({
   submitMatchResult: async (resultData: any) => {
     set({ loading: true, error: null })
     try {
-      const token = get().token
-      const response = await fetch('/api/matches/results', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
-        },
-        body: JSON.stringify(resultData)
-      })
-      
-      if (!response.ok) throw new Error('Failed to submit match result')
+      await postData<void>('/matches/results', resultData)
       await get().fetchMatches()
       set({ loading: false })
     } catch (error) {
