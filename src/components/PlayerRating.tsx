@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Star, User, Send } from 'lucide-react';
 import { toast } from 'sonner';
+import { postData } from '@/lib/http';
 
 interface Player {
   id: string;
@@ -42,26 +43,13 @@ export default function PlayerRating({
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3001/api/ratings', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          match_id: matchId,
-          rated_player_id: playerId,
-          rating: ratings[playerId],
-          comment: comments[playerId] || '',
-          category: 'overall',
-        }),
+      await postData<void>('/ratings', {
+        match_id: matchId,
+        rated_player_id: playerId,
+        rating: ratings[playerId],
+        comment: comments[playerId] || '',
+        category: 'overall',
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to submit rating');
-      }
 
       toast.success(
         `Rating submitted for ${
