@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Trophy, Target, Star, TrendingUp, Users, Award } from 'lucide-react';
 import { formatRating, getWinRate, cn } from '@/lib/utils';
+import { getData } from '@/lib/http';
 
 interface Player {
   id: string;
@@ -23,20 +24,16 @@ export default function Statistics() {
 
   const fetchStatistics = async () => {
     try {
-      const [leaderboardRes, topScorersRes] = await Promise.all([
-        fetch('/api/statistics/leaderboard'),
-        fetch('/api/statistics/top-scorers')
-      ]);
-      
-      const leaderboardData = await leaderboardRes.json();
-      const topScorersData = await topScorersRes.json();
-      
-      setLeaderboard(leaderboardData);
-      setTopScorers(topScorersData);
+      const [leaderboardData, topScorersData] = await Promise.all([
+        getData<Player[]>('/statistics/leaderboard'),
+        getData<Player[]>('/statistics/top-scorers'),
+      ])
+      setLeaderboard(leaderboardData)
+      setTopScorers(topScorersData)
     } catch (error) {
-      console.error('Error fetching statistics:', error);
+      console.error('Error fetching statistics:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   };
 
