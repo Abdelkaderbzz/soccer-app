@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Toaster } from "sonner";
 import Home from "@/pages/Home";
@@ -17,7 +17,7 @@ import Navigation from "@/components/Navigation";
 import { useStore } from "@/store/useStore";
 
 export default function App() {
-  const { getCurrentUser, token } = useStore();
+  const { getCurrentUser, token, currentUser } = useStore();
 
   useEffect(() => {
     // Check for authentication on app load
@@ -29,21 +29,32 @@ export default function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
-        <Navigation />
+        {currentUser && <Navigation />}
         <main className="container mx-auto px-4 py-8">
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/matches" element={<Matches />} />
-            <Route path="/matches/create" element={<CreateMatch />} />
-            <Route path="/matches/:id" element={<MatchDetails />} />
-            <Route path="/matches/:id/submit-result" element={<SubmitMatchResult />} />
-            <Route path="/players" element={<Players />} />
-            <Route path="/players/:id" element={<PlayerProfile />} />
-            <Route path="/clubs" element={<Clubs />} />
-            <Route path="/clubs/:id" element={<ClubDetail />} />
-            <Route path="/statistics" element={<Statistics />} />
+            {currentUser ? (
+              <>
+                <Route path="/" element={<Home />} />
+                <Route path="/matches" element={<Matches />} />
+                <Route path="/matches/create" element={<CreateMatch />} />
+                <Route path="/matches/:id" element={<MatchDetails />} />
+                <Route path="/matches/:id/submit-result" element={<SubmitMatchResult />} />
+                <Route path="/players" element={<Players />} />
+                <Route path="/players/:id" element={<PlayerProfile />} />
+                <Route path="/clubs" element={<Clubs />} />
+                <Route path="/clubs/:id" element={<ClubDetail />} />
+                <Route path="/statistics" element={<Statistics />} />
+                <Route path="/login" element={<Navigate to="/" replace />} />
+                <Route path="/register" element={<Navigate to="/" replace />} />
+              </>
+            ) : (
+              <>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
+              </>
+            )}
           </Routes>
         </main>
         <Toaster position="top-right" />

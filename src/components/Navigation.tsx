@@ -26,7 +26,7 @@ export default function Navigation() {
           </Link>
           
           <div className="hidden md:flex space-x-1">
-            {navItems.map((item) => {
+            {currentUser && navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path || 
                 (item.path !== '/' && location.pathname.startsWith(item.path));
