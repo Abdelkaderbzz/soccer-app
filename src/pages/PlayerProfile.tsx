@@ -5,6 +5,7 @@ import {
   ArrowLeft, Award, TrendingUp, Shield, Zap, Users 
 } from 'lucide-react';
 import { formatDate, getWinRate, formatRating } from '@/lib/utils';
+import { getData } from '@/lib/http';
 
 export default function PlayerProfile() {
   const { id } = useParams<{ id: string }>();
@@ -21,25 +22,21 @@ export default function PlayerProfile() {
 
   const fetchPlayer = async () => {
     try {
-      const response = await fetch(`/api/players/${id}`);
-      if (!response.ok) throw new Error('Failed to fetch player');
-      const data = await response.json();
-      setPlayer(data);
+      const data = await getData<any>(`/players/${id}`)
+      setPlayer(data)
     } catch (error) {
-      console.error('Error fetching player:', error);
+      console.error('Error fetching player:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
   };
 
   const fetchPlayerRatings = async () => {
     try {
-      const response = await fetch(`/api/players/${id}/ratings`);
-      if (!response.ok) throw new Error('Failed to fetch ratings');
-      const data = await response.json();
-      setRatings(data);
+      const data = await getData<any[]>(`/players/${id}/ratings`)
+      setRatings(data)
     } catch (error) {
-      console.error('Error fetching ratings:', error);
+      console.error('Error fetching ratings:', error)
     }
   };
 
