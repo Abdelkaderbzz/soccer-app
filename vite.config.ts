@@ -1,10 +1,12 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tsconfigPaths from "vite-tsconfig-paths";
 import { traeBadgePlugin } from 'vite-plugin-trae-solo-badge';
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+  return {
   plugins: [
     react({
       babel: {
@@ -27,7 +29,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: env.VITE_API_URL || 'http://localhost:3001',
         changeOrigin: true,
         secure: false,
         configure: (proxy, _options) => {
@@ -44,4 +46,5 @@ export default defineConfig({
       }
     }
   }
-})
+}
+});
