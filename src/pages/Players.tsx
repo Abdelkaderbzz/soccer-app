@@ -3,6 +3,7 @@ import { Users, User, Star, Trophy, Calendar } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { getData } from '@/lib/http';
 
 interface Player {
   id: string;
@@ -29,17 +30,7 @@ export default function Players() {
 
   const fetchPlayers = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/players', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch players');
-      }
-
-      const data = await response.json();
+      const data = await getData<Player[]>('/players');
       setPlayers(data);
     } catch (error) {
       console.error('Error fetching players:', error);
