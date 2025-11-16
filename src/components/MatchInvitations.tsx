@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/store/useStore';
+import { getData, postData } from '@/lib/http';
 import { UserPlus, Send, Check, X, Users, Trophy } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -46,13 +47,7 @@ export default function MatchInvitations({ matchId, team, onInviteComplete }: Ma
 
   const fetchAvailablePlayers = async () => {
     try {
-      // Fetch all players except current user
-      const response = await fetch('http://localhost:3001/api/players', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
+      const data = await getData<Player[]>('/players');
       setPlayers(data.filter((player: Player) => player.id !== currentUser?.id));
     } catch (error) {
       console.error('Error fetching players:', error);
@@ -62,12 +57,7 @@ export default function MatchInvitations({ matchId, team, onInviteComplete }: Ma
 
   const fetchInvitations = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/matches/${matchId}/invitations`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
+      const data = await getData<MatchInvitation[]>(`/matches/${matchId}/invitations`);
       setInvitations(data);
     } catch (error) {
       console.error('Error fetching invitations:', error);
@@ -82,27 +72,17 @@ export default function MatchInvitations({ matchId, team, onInviteComplete }: Ma
 
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/matches/${matchId}/invite`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          player_id: selectedPlayerId,
-          team: team
-        }),
+      await postData<void>(`/matches/${matchId}/invite`, {
+        player_id: selectedPlayerId,
+        team: team,
       });
 
-      if (response.ok) {
+      {
         toast.success('Player invited successfully!');
         setSelectedPlayerId('');
         setShowInviteForm(false);
         fetchInvitations();
         onInviteComplete?.();
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to invite player');
       }
     } catch (error) {
       console.error('Error inviting player:', error);
@@ -114,14 +94,8 @@ export default function MatchInvitations({ matchId, team, onInviteComplete }: Ma
 
   const handleAcceptInvitation = async (invitationId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/matches/invitations/${invitationId}/accept`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
+      await postData<void>(`/matches/invitations/${invitationId}/accept`);
+      {
         toast.success('Invitation accepted!');
         fetchInvitations();
         onInviteComplete?.();
@@ -134,14 +108,8 @@ export default function MatchInvitations({ matchId, team, onInviteComplete }: Ma
 
   const handleRejectInvitation = async (invitationId: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/matches/invitations/${invitationId}/reject`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
+      await postData<void>(`/matches/invitations/${invitationId}/reject`);
+      {
         toast.success('Invitation rejected');
         fetchInvitations();
       }
