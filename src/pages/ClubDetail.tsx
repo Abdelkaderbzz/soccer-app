@@ -57,21 +57,13 @@ const ClubDetail: React.FC = () => {
 
   const fetchClub = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/clubs/${id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
+      const data = await getData<Club>(`/clubs/${id}`);
       setClub(data);
 
       // Check if current user is manager or admin
-      const userResponse = await fetch('http://localhost:3001/api/auth/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const userData = await userResponse.json();
+      const userData = await getData<{ id: string; role: string }>(
+        '/auth/me'
+      );
       setIsAdmin(userData.role === 'admin');
 
       const manager = data.club_players.find(
@@ -93,38 +85,12 @@ const ClubDetail: React.FC = () => {
 
     try {
       // First find player by email
-      const playerResponse = await fetch(
-        `http://localhost:3001/api/players/email/${inviteEmail}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const player = await getData<{ id: string }>(
+        `/players/email/${inviteEmail}`
       );
-
-      if (!playerResponse.ok) {
-        throw new Error('Player not found with this email');
-      }
-
-      const player = await playerResponse.json();
 
       // Send invitation
-      const inviteResponse = await fetch(
-        `http://localhost:3001/api/clubs/${id}/invite`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ playerId: player.id }),
-        }
-      );
-
-      if (!inviteResponse.ok) {
-        const errorData = await inviteResponse.json();
-        throw new Error(errorData.error || 'Failed to send invitation');
-      }
+      await postData<void>(`/clubs/${id}/invite`, { playerId: player.id });
 
       setInviteEmail('');
       setShowInviteForm(false);
@@ -358,3 +324,4 @@ const ClubDetail: React.FC = () => {
 };
 
 export default ClubDetail;
+import { getData, postData } from '@/lib/http';

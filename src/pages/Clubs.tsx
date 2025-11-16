@@ -51,12 +51,7 @@ const Clubs: React.FC = () => {
 
   const fetchClubs = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/clubs', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
+      const data = await getData<Club[]>('/clubs');
       setClubs(data);
     } catch (error) {
       console.error('Error fetching clubs:', error);
@@ -67,12 +62,7 @@ const Clubs: React.FC = () => {
 
   const checkAdminStatus = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/auth/me', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
+      const data = await getData<{ id: string; role: string }>('/auth/me');
       setIsAdmin(data.role === 'admin');
     } catch (error) {
       console.error('Error checking admin status:', error);
@@ -84,21 +74,7 @@ const Clubs: React.FC = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3001/api/clubs', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newClub),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create club');
-      }
-
-      const createdClub = await response.json();
+      const createdClub = await postData<Club>('/clubs', newClub);
       setClubs([...clubs, createdClub]);
       setNewClub({ name: '', description: '', logo_url: '' });
       setShowCreateForm(false);
@@ -292,3 +268,4 @@ const Clubs: React.FC = () => {
 };
 
 export default Clubs;
+import { getData, postData } from '@/lib/http';
