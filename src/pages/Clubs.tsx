@@ -2,11 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users,
-  Trophy,
-  Calendar,
   Star,
   Shield,
-  UserPlus,
   Plus,
 } from 'lucide-react';
 
@@ -42,7 +39,6 @@ const Clubs: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState('');
 
-  const token = localStorage.getItem('token');
 
   useEffect(() => {
     fetchClubs();

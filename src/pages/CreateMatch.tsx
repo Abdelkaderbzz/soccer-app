@@ -8,17 +8,9 @@ import {
   Trophy,
   ArrowLeft,
   Shield,
-  UserPlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface Club {
-  id: string;
-  name: string;
-  description: string;
-  logo_url: string;
-  club_players: any[];
-}
 
 export default function CreateMatch() {
   const navigate = useNavigate();

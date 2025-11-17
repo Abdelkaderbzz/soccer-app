@@ -7,6 +7,7 @@ import { ResponseUtils } from '../utils/response';
 import { ValidationUtils } from '../utils/validation';
 import { authenticate } from '../utils/auth';
 import { AuthenticatedRequest } from '../types';
+import { supabaseAdmin } from '../config/database';
 
 const router = Router();
 
@@ -133,3 +134,47 @@ router.put('/:id', authenticate, async (req: AuthenticatedRequest, res: Response
 })
 
 export default router;
+/**
+ * Create signed upload URL for player photo
+ * POST /api/players/:id/photo/signed-url
+ */
+router.post('/:id/photo/signed-url', authenticate, async (req: AuthenticatedRequest, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params
+    const { fileName } = req.body as { fileName?: string }
+
+    if (!ValidationUtils.isValidUUID(id)) {
+      ResponseUtils.error(res, 'Invalid player ID format')
+      return
+    }
+
+    const player = await PlayerService.getPlayerById(id)
+    if (!player) {
+      ResponseUtils.notFound(res, 'Player')
+      return
+    }
+
+    if (player.user_id !== req.user?.id) {
+      ResponseUtils.forbidden(res, 'You can only update your own player profile')
+      return
+    }
+
+    const bucket = process.env.SUPABASE_BUCKET || 'soccer-app'
+    const ext = (fileName?.split('.').pop() || 'jpg').toLowerCase()
+    const path = `profiles/${req.user!.id}/${Date.now()}.${ext}`
+
+    const { data, error } = await supabaseAdmin.storage
+      .from(bucket)
+      .createSignedUploadUrl(path)
+
+    if (error || !data?.token) {
+      ResponseUtils.serverError(res, 'Failed to create upload URL')
+      return
+    }
+
+    ResponseUtils.success(res, { path, token: data.token })
+  } catch (error) {
+    console.error('Error in POST /players/:id/photo/signed-url:', error)
+    ResponseUtils.serverError(res, 'Failed to create signed upload URL')
+  }
+})
