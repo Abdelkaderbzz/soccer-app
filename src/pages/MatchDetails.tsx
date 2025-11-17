@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useStore } from '@/store/useStore';
 import { 
-  Calendar, Users, MapPin, Clock, Trophy, Star, 
-  Shield, Target, Zap, Plus, Shuffle, ArrowLeft 
+  Calendar, Users, MapPin, Trophy, 
+  Shield, Target, Shuffle, ArrowLeft 
 } from 'lucide-react';
 import { formatDate, getStatusColor, calculateTeamStrength, cn } from '@/lib/utils';
 import { toast } from 'sonner';

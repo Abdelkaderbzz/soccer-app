@@ -16,7 +16,7 @@ export class PlayerService {
       .order('overall_rating', { ascending: false })
 
     if (error) throw error
-    return data
+    return await this.withSignedPhotoUrls(data)
   }
 
   static async getPlayerById(playerId: string) {
@@ -34,7 +34,8 @@ export class PlayerService {
       .single()
 
     if (error) throw error
-    return data
+    const [signed] = await this.withSignedPhotoUrls([data])
+    return signed
   }
 
   static async getPlayerByEmail(email: string) {
@@ -78,7 +79,8 @@ export class PlayerService {
       .single()
 
     if (error) throw error
-    return data
+    const [signed] = await this.withSignedPhotoUrls([data])
+    return signed
   }
 
   static async updatePlayerStats(playerId: string, stats: Partial<Player>) {
@@ -124,5 +126,23 @@ export class PlayerService {
         updated_at: '2024-01-02T00:00:00Z'
       }
     ]
+  }
+
+  private static async withSignedPhotoUrls<T extends { photo_url: string | null }>(rows: T[]): Promise<T[]> {
+    const bucket = process.env.SUPABASE_BUCKET || 'soccer-app'
+    return await Promise.all(rows.map(async (row) => {
+      const url = row.photo_url
+      if (url && !url.startsWith('http')) {
+        try {
+          const { data } = await supabaseAdmin.storage
+            .from(bucket)
+            .createSignedUrl(url, 3600)
+          if (data?.signedUrl) {
+            return { ...row, photo_url: data.signedUrl } as T
+          }
+        } catch {}
+      }
+      return row
+    }))
   }
 }

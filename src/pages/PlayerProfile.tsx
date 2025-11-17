@@ -5,13 +5,17 @@ import {
   ArrowLeft, Award, TrendingUp, Shield, Zap, Users 
 } from 'lucide-react';
 import { formatDate, getWinRate, formatRating } from '@/lib/utils';
-import { getData } from '@/lib/http';
+import { getData, putData, postData } from '@/lib/http';
+import { supabase } from '@/lib/supabase';
+import { useStore } from '@/store/useStore';
 
 export default function PlayerProfile() {
   const { id } = useParams<{ id: string }>();
   const [player, setPlayer] = useState<any>(null);
   const [ratings, setRatings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const { currentUser, setCurrentPlayer } = useStore();
 
   useEffect(() => {
     if (id) {
@@ -37,6 +41,33 @@ export default function PlayerProfile() {
       setRatings(data)
     } catch (error) {
       console.error('Error fetching ratings:', error)
+    }
+  };
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      if (!id || !e.target.files || e.target.files.length === 0) return;
+      const file = e.target.files[0];
+      setUploading(true);
+      const { path, token } = await postData<{ path: string; token: string }>(
+        `/players/${id}/photo/signed-url`,
+        { fileName: file.name }
+      )
+      const { error: uploadError } = await supabase.storage
+        .from('soccer-app')
+        .uploadToSignedUrl(path, token, file)
+      if (uploadError) throw uploadError
+
+      const updated = await putData<any>(`/players/${id}`, { photo_url: path })
+      setPlayer((prev: any) => ({ ...prev, photo_url: path }));
+      if (currentUser && currentUser.id === player?.user_id) {
+        setCurrentPlayer(updated || { ...player, photo_url: path });
+      }
+    } catch (err: any) {
+      console.error('Error uploading photo:', err);
+      alert(err.message || 'Failed to upload photo');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -82,6 +113,20 @@ export default function PlayerProfile() {
                 alt={player.nickname}
                 className="w-32 h-32 rounded-full object-cover border-4 border-green-200"
               />
+              {currentUser?.id === player.user_id && (
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2">
+                  <label className="bg-green-600 text-white px-3 py-1 rounded-lg text-sm cursor-pointer hover:bg-green-700">
+                    {uploading ? 'Uploading...' : 'Change Photo'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                  </label>
+                </div>
+              )}
               <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-white rounded-full p-2">
                 <Trophy className="h-6 w-6" />
               </div>
